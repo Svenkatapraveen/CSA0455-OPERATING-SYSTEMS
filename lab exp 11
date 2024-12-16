@@ -1,0 +1,45 @@
+#include <stdio.h>
+#include <pthread.h>
+
+// Function for thread 1
+void* task1(void* arg) {
+    printf("Thread 1: Start Task 1\n");
+    for (int i = 0; i < 5; i++) {
+        printf("Thread 1: %d\n", i + 1);
+    }
+    printf("Thread 1: End Task 1\n");
+    return NULL;
+}
+
+// Function for thread 2
+void* task2(void* arg) {
+    printf("Thread 2: Start Task 2\n");
+    for (int i = 0; i < 5; i++) {
+        printf("Thread 2: %d\n", i + 1);
+    }
+    printf("Thread 2: End Task 2\n");
+    return NULL;
+}
+
+int main() {
+    pthread_t thread1, thread2;
+    
+    // Create the first thread
+    if (pthread_create(&thread1, NULL, task1, NULL) != 0) {
+        perror("Failed to create thread 1");
+        return 1;
+    }
+    
+    // Create the second thread
+    if (pthread_create(&thread2, NULL, task2, NULL) != 0) {
+        perror("Failed to create thread 2");
+        return 1;
+    }
+
+    // Wait for both threads to complete
+    pthread_join(thread1, NULL);
+    pthread_join(thread2, NULL);
+
+    printf("Main Thread: All tasks completed.\n");
+    return 0;
+}
