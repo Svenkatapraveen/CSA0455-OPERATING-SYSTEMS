@@ -1,0 +1,70 @@
+#include <stdio.h>
+#include <pthread.h>
+#include <semaphore.h>
+#include <unistd.h>  // For sleep function
+
+sem_t mutex, writeLock;
+int readCount = 0;
+
+void* reader(void* param) {
+    while (1) {
+        sem_wait(&mutex);  // Enter critical section to modify readCount
+        readCount++;
+        if (readCount == 1) {
+            sem_wait(&writeLock);  // Block writers if this is the first reader
+        }
+        sem_post(&mutex);  // Exit critical section
+
+        // Reading process (simulate reading with sleep)
+        printf("Reader is reading\n");
+        sleep(1);  // Simulate reading time
+
+        sem_wait(&mutex);  // Enter critical section to modify readCount
+        readCount--;
+        if (readCount == 0) {
+            sem_post(&writeLock);  // Allow writers once all readers are done
+        }
+        sem_post(&mutex);  // Exit critical section
+
+        sleep(1);  // To allow other threads to run
+    }
+}
+
+void* writer(void* param) {
+    while (1) {
+        sem_wait(&writeLock);  // Block other writers and readers
+
+        // Writing process (simulate writing with sleep)
+        printf("Writer is writing\n");
+        sleep(2);  // Simulate writing time
+
+        sem_post(&writeLock);  // Release the write lock
+
+        sleep(1);  // To allow other threads to run
+    }
+}
+
+int main() {
+    pthread_t r1, r2, w1, w2;
+
+    sem_init(&mutex, 0, 1);  // Initialize mutex to 1
+    sem_init(&writeLock, 0, 1);  // Initialize write lock to 1
+
+    // Create threads for readers and writers
+    pthread_create(&r1, NULL, reader, NULL);
+    pthread_create(&r2, NULL, reader, NULL);
+    pthread_create(&w1, NULL, writer, NULL);
+    pthread_create(&w2, NULL, writer, NULL);
+
+    // Wait for threads to complete (this is a blocking call)
+    pthread_join(r1, NULL);
+    pthread_join(r2, NULL);
+    pthread_join(w1, NULL);
+    pthread_join(w2, NULL);
+
+    // Clean up semaphores
+    sem_destroy(&mutex);
+    sem_destroy(&writeLock);
+
+    return 0;
+}
